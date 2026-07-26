@@ -1,0 +1,15 @@
+You have both Node.js and ngrok installed. Here's the two-step process:
+
+  Step 1 — Start a local server for the site.
+
+  Run this in your terminal:
+  npx serve "D:/Sanele Github Projects/mandisa" -p 3000
+
+  Step 2 — In a second terminal, open the tunnel:
+  ngrok http 3000
+
+  ngrok will give you a public URL like https://abc123.ngrok-free.app — that's what you share.
+
+  ---
+  Want me to do it for you? I can run both commands in the background and give you the live URL directly. Just say the
+  word

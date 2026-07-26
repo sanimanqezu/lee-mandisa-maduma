@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANDISA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== RESET ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black:      #0a0a0a;
+            --charcoal:   #161616;
+            --charcoal-2: #1e1e1e;
+            --gold:       #c9a84c;
+            --gold-light: #e8c878;
+            --gold-dim:   rgba(201,168,76,0.18);
+            --white:      #ffffff;
+            --muted:      rgba(255,255,255,0.55);
+        }
+
+        html { scroll-behavior: smooth; cursor: none; }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* ===== FILM GRAIN OVERLAY ===== */
+        #grain {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9500;
+            opacity: 0.035;
+            mix-blend-mode: screen;
+        }
+
+        /* ===== CUSTOM CURSOR ===== */
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--gold);
+            border-radius: 50%;
+            position: fixed;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+        .cursor-ring {
+            width: 38px;
+            height: 38px;
+            border: 1px solid rgba(201,168,76,0.55);
+            border-radius: 50%;
+            position: fixed;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.35s ease, height 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+        }
+        .cursor-ring.hovered {
+            width: 64px;
+            height: 64px;
+            border-color: var(--gold);
+            background: rgba(201,168,76,0.06);
+        }
+
+        /* ===== CINEMATIC LOADER ===== */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--black);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            transition: opacity 1s ease 0.2s, visibility 1s ease 0.2s;
+        }
+        .loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .loader-name {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 7vw, 5.5rem);
+            font-weight: 400;
+            letter-spacing: 0.55em;
+            text-transform: uppercase;
+            color: var(--gold);
+            opacity: 0;
+            animation: lFadeIn 1.2s ease 0.4s forwards;
+        }
+        .loader-bar {
+            width: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            animation: lGrow 1.4s ease 0.8s forwards;
+        }
+        @keyframes lFadeIn { to { opacity: 1; } }
+        @keyframes lGrow   { to { width: 180px; } }
+
+        /* ===== NAVBAR ===== */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            padding: 1.75rem 5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: padding 0.4s ease, background 0.4s ease, border 0.4s ease;
+        }
+        nav.scrolled {
+            padding: 1.1rem 5rem;
+            background: rgba(10,10,10,0.82);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(201,168,76,0.12);
+        }
+        .nav-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            letter-spacing: 0.35em;
+            color: var(--gold);
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+        .nav-links { display: flex; gap: 3.5rem; list-style: none; }
+        .nav-links a {
+            font-size: 0.68rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: var(--gold); }
+
+        /* ===== SCROLL FADE-UP ===== */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(42px);
+            transition: opacity 0.9s ease, transform 0.9s ease;
+        }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
+        .d1 { transition-delay: 0.12s; }
+        .d2 { transition-delay: 0.24s; }
+        .d3 { transition-delay: 0.38s; }
+        .d4 { transition-delay: 0.52s; }
+
+        /* ===== HERO ===== */
+        #home {
+            position: relative;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hero-video {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%; min-height: 100%;
+            width: auto; height: auto;
+            object-fit: cover;
+        }
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(10,10,10,0.15) 0%,
+                rgba(10,10,10,0.48) 40%,
+                rgba(10,10,10,0.92) 100%
+            );
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 0 2rem;
+        }
+        .hero-eyebrow {
+            font-size: 0.65rem;
+            letter-spacing: 0.6em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 1.8rem;
+            opacity: 0;
+            animation: hUp 1s ease 2.1s forwards;
+        }
+        .hero-name {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(4.5rem, 16vw, 15rem);
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            line-height: 0.9;
+            color: var(--white);
+            opacity: 0;
+            animation: hUp 1.3s ease 2.3s forwards;
+        }
+        .hero-name em {
+            font-style: italic;
+            color: var(--gold);
+        }
+        .hero-tag {
+            font-size: 0.8rem;
+            letter-spacing: 0.45em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-top: 1.8rem;
+            opacity: 0;
+            animation: hUp 1s ease 2.6s forwards;
+        }
+        @keyframes hUp {
+            to { opacity: 1; transform: translateY(0); }
+            from { transform: translateY(28px); }
+        }
+
+        .scroll-cue {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.6rem;
+            opacity: 0;
+            animation: hUp 1s ease 3s forwards;
+        }
+        .scroll-cue span {
+            font-size: 0.55rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+        }
+        .scroll-line {
+            width: 1px;
+            height: 54px;
+            background: linear-gradient(to bottom, var(--gold), transparent);
+            animation: pulse 2.2s ease infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scaleY(1); }
+            50%      { opacity: 0.3; transform: scaleY(0.65); }
+        }
+
+        /* ===== SECTION COMMON ===== */
+        section { padding: 9rem 5rem; }
+        .label {
+            font-size: 0.62rem;
+            letter-spacing: 0.55em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 0.9rem;
+        }
+        .sec-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.4rem, 5.5vw, 5.5rem);
+            font-weight: 700;
+            line-height: 1.08;
+            color: var(--white);
+        }
+        .gold-rule {
+            width: 55px;
+            height: 1px;
+            background: var(--gold);
+            margin: 1.8rem 0;
+        }
+
+        /* ===== STORY ===== */
+        #story { background: var(--charcoal); }
+        .story-wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7rem;
+            align-items: center;
+        }
+        .story-media {
+            position: relative;
+        }
+        .story-frame {
+            position: absolute;
+            top: -18px; left: -18px;
+            right: 18px; bottom: 18px;
+            border: 1px solid rgba(201,168,76,0.28);
+            pointer-events: none;
+        }
+        .story-media video {
+            width: 100%;
+            aspect-ratio: 9/16;
+            object-fit: cover;
+            display: block;
+            max-height: 78vh;
+        }
+        .story-glow {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(201,168,76,0.12) 0%, transparent 55%);
+            pointer-events: none;
+        }
+
+        .story-text {}
+        blockquote.pull {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.1rem, 2.2vw, 1.75rem);
+            font-style: italic;
+            color: var(--gold-light);
+            line-height: 1.65;
+            padding-left: 1.6rem;
+            border-left: 2px solid var(--gold);
+            margin: 2.2rem 0;
+        }
+        .story-body {
+            font-size: 1rem;
+            line-height: 1.95;
+            color: var(--muted);
+            margin-bottom: 1.4rem;
+        }
+        .sig {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-style: italic;
+            color: var(--gold);
+            margin-top: 2.5rem;
+        }
+
+        /* ===== INTERLUDE QUOTE ===== */
+        .interlude {
+            background: var(--charcoal-2);
+            padding: 9rem 5rem;
+            text-align: center;
+        }
+        .big-quote {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 3.8vw, 3.4rem);
+            font-style: italic;
+            color: var(--white);
+            max-width: 860px;
+            margin: 0 auto;
+            line-height: 1.55;
+        }
+        .big-quote em { color: var(--gold); font-style: inherit; }
+        .q-attr {
+            margin-top: 2rem;
+            font-size: 0.68rem;
+            letter-spacing: 0.45em;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        /* ===== GALLERY ===== */
+        #gallery { background: var(--black); }
+        .gallery-hdr {
+            max-width: 1400px;
+            margin: 0 auto 3.5rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+        .gallery-sub {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.08em;
+            max-width: 280px;
+            line-height: 1.7;
+        }
+        .gallery-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.4rem;
+        }
+        .g-item {
+            position: relative;
+            aspect-ratio: 3/4;
+            overflow: hidden;
+            background: var(--charcoal);
+            border: 1px solid transparent;
+            transition: border-color 0.4s ease;
+        }
+        .g-item:hover { border-color: rgba(201,168,76,0.28); }
+        .g-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.65s ease;
+        }
+        .g-item:hover video { transform: scale(1.05); }
+        .g-cover {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,10,10,0.42);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.45s ease;
+            z-index: 1;
+        }
+        .g-item:hover .g-cover { opacity: 0; }
+        .play-btn {
+            width: 52px;
+            height: 52px;
+            border: 1px solid rgba(255,255,255,0.45);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .g-item:hover .play-btn {
+            border-color: var(--gold);
+            background: rgba(201,168,76,0.12);
+        }
+        .play-btn svg {
+            fill: white;
+            width: 14px;
+            height: 14px;
+            margin-left: 3px;
+        }
+        .g-num {
+            position: absolute;
+            bottom: 1rem;
+            left: 1.1rem;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 0.62rem;
+            letter-spacing: 0.3em;
+            color: rgba(255,255,255,0.35);
+            z-index: 2;
+        }
+
+        /* ===== CONTACT ===== */
+        #contact { background: var(--charcoal); }
+        .contact-wrap { max-width: 860px; margin: 0 auto; }
+        .contact-hdr { margin-bottom: 4rem; }
+        .cform {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.6rem;
+        }
+        .fg { display: flex; flex-direction: column; gap: 0.5rem; }
+        .fg.full { grid-column: 1 / -1; }
+        .fg label {
+            font-size: 0.6rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .fg input, .fg textarea {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            padding: 0.8rem 0;
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+            resize: none;
+        }
+        .fg input::placeholder, .fg textarea::placeholder { color: rgba(255,255,255,0.18); }
+        .fg input:focus, .fg textarea:focus { border-bottom-color: var(--gold); }
+        .fg textarea { min-height: 130px; }
+        .send-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.45em;
+            text-transform: uppercase;
+            padding: 1.1rem 3.5rem;
+            cursor: none;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.4s ease;
+        }
+        .send-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--gold);
+            transform: translateX(-101%);
+            transition: transform 0.4s ease;
+            z-index: 0;
+        }
+        .send-btn span { position: relative; z-index: 1; }
+        .send-btn:hover { color: var(--black); }
+        .send-btn:hover::before { transform: translateX(0); }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--black);
+            padding: 2.8rem 5rem;
+            border-top: 1px solid rgba(201,168,76,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .f-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            letter-spacing: 0.42em;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+        .f-copy { font-size: 0.68rem; color: rgba(255,255,255,0.25); letter-spacing: 0.08em; }
+        .f-social { display: flex; gap: 2.2rem; }
+        .f-social a {
+            font-size: 0.62rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .f-social a:hover { color: var(--gold); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 960px) {
+            nav, nav.scrolled { padding: 1.4rem 2.5rem; }
+            .nav-links { display: none; }
+            section, .interlude { padding: 6rem 2.5rem; }
+            .story-wrap { grid-template-columns: 1fr; gap: 3.5rem; }
+            .story-media video { aspect-ratio: 16/9; max-height: 55vh; }
+            .gallery-grid { grid-template-columns: 1fr 1fr; }
+            footer { flex-direction: column; gap: 1.6rem; text-align: center; padding: 2.5rem; }
+        }
+        @media (max-width: 600px) {
+            .gallery-grid { grid-template-columns: 1fr; }
+            .gallery-hdr { flex-direction: column; align-items: flex-start; }
+            .cform { grid-template-columns: 1fr; }
+            .fg.full { grid-column: 1; }
+        }
+
+        /* ===== PHOTOS SECTION ===== */
+        #photos { background: var(--charcoal-2); }
+        .photos-hdr {
+            max-width: 1400px;
+            margin: 0 auto 3.5rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+        .photos-sub {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.08em;
+            max-width: 280px;
+            line-height: 1.7;
+        }
+        .photos-masonry {
+            max-width: 1400px;
+            margin: 0 auto;
+            columns: 3;
+            column-gap: 1.4rem;
+        }
+        .photo-item {
+            break-inside: avoid;
+            margin-bottom: 1.4rem;
+            position: relative;
+            overflow: hidden;
+            cursor: none;
+            border: 1px solid transparent;
+            transition: border-color 0.4s ease;
+        }
+        .photo-item:hover { border-color: rgba(201,168,76,0.28); }
+        .photo-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.6s ease;
+        }
+        .photo-item:hover img { transform: scale(1.04); }
+        .photo-item-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10,10,10,0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.4s ease;
+        }
+        .photo-item:hover .photo-item-overlay { background: rgba(10,10,10,0.28); }
+        .expand-icon {
+            width: 46px;
+            height: 46px;
+            border: 1px solid transparent;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.4s, border-color 0.4s;
+        }
+        .photo-item:hover .expand-icon { opacity: 1; border-color: rgba(255,255,255,0.55); }
+        .expand-icon svg { stroke: white; fill: none; width: 18px; height: 18px; }
+
+        .load-more-wrap {
+            max-width: 1400px;
+            margin: 3rem auto 0;
+            display: flex;
+            justify-content: center;
+        }
+        .load-more-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.45em;
+            text-transform: uppercase;
+            padding: 1.1rem 3.5rem;
+            cursor: none;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.4s ease;
+        }
+        .load-more-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--gold);
+            transform: translateX(-101%);
+            transition: transform 0.4s ease;
+            z-index: 0;
+        }
+        .load-more-btn span { position: relative; z-index: 1; }
+        .load-more-btn:hover { color: var(--black); }
+        .load-more-btn:hover::before { transform: translateX(0); }
+        .load-more-btn.hidden { display: none; }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(10,10,10,0.96);
+            z-index: 9100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .lightbox.open { opacity: 1; visibility: visible; }
+        .lb-img {
+            max-width: 88vw;
+            max-height: 88vh;
+            object-fit: contain;
+            transform: scale(0.95);
+            transition: transform 0.4s ease;
+            display: block;
+        }
+        .lightbox.open .lb-img { transform: scale(1); }
+        .lb-close {
+            position: absolute;
+            top: 2rem; right: 2.5rem;
+            font-size: 0.62rem;
+            letter-spacing: 0.42em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            cursor: none;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+        }
+        .lb-close:hover { color: var(--gold); }
+        .lb-prev, .lb-next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.14);
+            color: rgba(255,255,255,0.55);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.38em;
+            text-transform: uppercase;
+            padding: 0.9rem 1.5rem;
+            cursor: none;
+            transition: all 0.3s;
+        }
+        .lb-prev { left: 2rem; }
+        .lb-next { right: 2rem; }
+        .lb-prev:hover, .lb-next:hover { border-color: var(--gold); color: var(--gold); }
+        .lb-counter {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            letter-spacing: 0.38em;
+            color: rgba(255,255,255,0.28);
+        }
+
+        @media (max-width: 960px) {
+            .photos-masonry { columns: 2; }
+            .photos-hdr { flex-direction: column; align-items: flex-start; }
+            .lb-prev { left: 0.8rem; padding: 0.7rem 1rem; }
+            .lb-next { right: 0.8rem; padding: 0.7rem 1rem; }
+        }
+        @media (max-width: 600px) {
+            .photos-masonry { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Film Grain -->
+    <canvas id="grain"></canvas>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"  id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- Cinematic Loader -->
+    <div class="loader" id="loader">
+        <div class="loader-name">Mandisa</div>
+        <div class="loader-bar"></div>
+    </div>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav id="navbar">
+        <a href="#home" class="nav-logo">Mandisa</a>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#story">Story</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#photos">Photos</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- ===== HERO ===== -->
+    <section id="home">
+        <video class="hero-video" autoplay muted loop playsinline>
+            <source src="WhatsApp Video 2026-04-12 at 00.27.24.mp4" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-eyebrow">— Timeless · Radiant —</p>
+            <h1 class="hero-name">Man<em>di</em>sa</h1>
+            <p class="hero-tag">Grace &nbsp;·&nbsp; Beauty &nbsp;·&nbsp; Power</p>
+        </div>
+        <div class="scroll-cue">
+            <span>Scroll</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- ===== STORY ===== -->
+    <section id="story">
+        <div class="story-wrap">
+            <div class="story-media fade-up">
+                <div class="story-frame"></div>
+                <video autoplay muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.27.43.mp4" type="video/mp4">
+                </video>
+                <div class="story-glow"></div>
+            </div>
+
+            <div class="story-text">
+                <p class="label fade-up">— Her Story —</p>
+                <h2 class="sec-title fade-up d1">More Than<br><em style="font-style:italic;color:var(--gold)">Beautiful</em></h2>
+                <div class="gold-rule fade-up d2"></div>
+                <blockquote class="pull fade-up d2">
+                    "She is not just a vision — she is a feeling, a frequency, a force."
+                </blockquote>
+                <p class="story-body fade-up d3">
+                    There are people who walk into a room and change the energy entirely. Mandisa is one of them. Her presence is quiet yet undeniable — the kind that stays with you long after she's gone.
+                </p>
+                <p class="story-body fade-up d3">
+                    This space is a celebration of who she is: her beauty, her grace, her story — told in the way only she can live it.
+                </p>
+                <div class="sig fade-up d4">Mandisa</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== QUOTE INTERLUDE ===== -->
+    <div class="interlude">
+        <blockquote class="big-quote fade-up">
+            "The most beautiful thing about her is not her face —<br>
+            it is <em>the light she carries</em> in her eyes."
+        </blockquote>
+        <p class="q-attr fade-up d1">— A Love Letter —</p>
+    </div>
+
+    <!-- ===== GALLERY ===== -->
+    <section id="gallery">
+        <div class="gallery-hdr">
+            <div>
+                <p class="label fade-up">— Moments —</p>
+                <h2 class="sec-title fade-up d1">Gallery</h2>
+            </div>
+            <p class="gallery-sub fade-up d2">Every frame, a memory.<br>Every moment, a masterpiece.</p>
+        </div>
+
+        <div class="gallery-grid">
+            <div class="g-item fade-up">
+                <video muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.28.54.mp4" type="video/mp4">
+                </video>
+                <div class="g-cover">
+                    <div class="play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
+                <span class="g-num">01</span>
+            </div>
+
+            <div class="g-item fade-up d1">
+                <video muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.29.01.mp4" type="video/mp4">
+                </video>
+                <div class="g-cover">
+                    <div class="play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
+                <span class="g-num">02</span>
+            </div>
+
+            <div class="g-item fade-up d2">
+                <video muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.29.17.mp4" type="video/mp4">
+                </video>
+                <div class="g-cover">
+                    <div class="play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
+                <span class="g-num">03</span>
+            </div>
+
+            <div class="g-item fade-up d1">
+                <video muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.29.171.mp4" type="video/mp4">
+                </video>
+                <div class="g-cover">
+                    <div class="play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
+                <span class="g-num">04</span>
+            </div>
+
+            <div class="g-item fade-up d2">
+                <video muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.29.18.mp4" type="video/mp4">
+                </video>
+                <div class="g-cover">
+                    <div class="play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
+                <span class="g-num">05</span>
+            </div>
+
+            <div class="g-item fade-up d3">
+                <video muted loop playsinline>
+                    <source src="WhatsApp Video 2026-04-12 at 00.29.317.mp4" type="video/mp4">
+                </video>
+                <div class="g-cover">
+                    <div class="play-btn">
+                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                    </div>
+                </div>
+                <span class="g-num">06</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PHOTOS ===== -->
+    <section id="photos">
+        <div class="photos-hdr">
+            <div>
+                <p class="label fade-up">— Captured —</p>
+                <h2 class="sec-title fade-up d1">Photos</h2>
+            </div>
+            <p class="photos-sub fade-up d2">A collection of beautiful moments,<br>frozen in time.</p>
+        </div>
+        <div class="photos-masonry" id="photosMasonry"></div>
+        <div class="load-more-wrap">
+            <button class="load-more-btn" id="loadMoreBtn"><span>Load More</span></button>
+        </div>
+    </section>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <button class="lb-close" id="lbClose">Close</button>
+        <button class="lb-prev" id="lbPrev">Prev</button>
+        <img class="lb-img" id="lbImg" src="" alt="">
+        <button class="lb-next" id="lbNext">Next</button>
+        <span class="lb-counter" id="lbCounter"></span>
+    </div>
+
+    <!-- ===== CONTACT ===== -->
+    <section id="contact">
+        <div class="contact-wrap">
+            <div class="contact-hdr">
+                <p class="label fade-up">— Reach Out —</p>
+                <h2 class="sec-title fade-up d1">Get In<br>Touch</h2>
+                <div class="gold-rule fade-up d2"></div>
+            </div>
+
+            <form class="cform" onsubmit="return false;">
+                <div class="fg fade-up">
+                    <label>Your Name</label>
+                    <input type="text" placeholder="Enter your name">
+                </div>
+                <div class="fg fade-up d1">
+                    <label>Email</label>
+                    <input type="email" placeholder="your@email.com">
+                </div>
+                <div class="fg fade-up d2">
+                    <label>Subject</label>
+                    <input type="text" placeholder="What's this about?">
+                </div>
+                <div class="fg fade-up d3">
+                    <label>Phone</label>
+                    <input type="tel" placeholder="+27 ...">
+                </div>
+                <div class="fg full fade-up d2">
+                    <label>Message</label>
+                    <textarea placeholder="Write your message here..."></textarea>
+                </div>
+                <div class="fg full fade-up d3">
+                    <button type="submit" class="send-btn"><span>Send Message</span></button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <div class="f-logo">Mandisa</div>
+        <p class="f-copy">© 2026 Mandisa. All rights reserved.</p>
+        <div class="f-social">
+            <a href="#">Instagram</a>
+            <a href="#">TikTok</a>
+            <a href="#">Twitter</a>
+        </div>
+    </footer>
+
+    <script>
+        /* ===== LOADER ===== */
+        window.addEventListener('load', () => {
+            setTimeout(() => document.getElementById('loader').classList.add('done'), 2000);
+        });
+
+        /* ===== CUSTOM CURSOR ===== */
+        const dot  = document.getElementById('cursorDot');
+        const ring = document.getElementById('cursorRing');
+        let mx = 0, my = 0, rx = 0, ry = 0;
+
+        document.addEventListener('mousemove', e => {
+            mx = e.clientX; my = e.clientY;
+            dot.style.left = mx + 'px';
+            dot.style.top  = my + 'px';
+        });
+
+        (function followRing() {
+            rx += (mx - rx) * 0.11;
+            ry += (my - ry) * 0.11;
+            ring.style.left = rx + 'px';
+            ring.style.top  = ry + 'px';
+            requestAnimationFrame(followRing);
+        })();
+
+        document.querySelectorAll('a, button, .g-item, input, textarea').forEach(el => {
+            el.addEventListener('mouseenter', () => ring.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
+        });
+
+        /* ===== NAVBAR SCROLL ===== */
+        const nav = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 80);
+        });
+
+        /* ===== INTERSECTION OBSERVER ===== */
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.14 });
+
+        document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+
+        /* ===== GALLERY HOVER PLAY ===== */
+        document.querySelectorAll('.g-item').forEach(item => {
+            const v = item.querySelector('video');
+            item.addEventListener('mouseenter', () => v.play());
+            item.addEventListener('mouseleave', () => { v.pause(); v.currentTime = 0; });
+        });
+
+        /* ===== FILM GRAIN ===== */
+        const canvas = document.getElementById('grain');
+        const ctx    = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        /* ===== PHOTOS GALLERY ===== */
+        const ALL_PHOTOS = [
+            'Sent/IMG-20251126-WA0000.jpg',
+            'Sent/IMG-20251126-WA0001.jpg',
+            'Sent/IMG-20251126-WA0002.jpg',
+            'Sent/IMG-20260103-WA0000.jpg',
+            'Sent/IMG-20260103-WA0001.jpg',
+            'Sent/IMG-20260403-WA0000.jpg',
+            'Sent/IMG-20260403-WA0001.jpg',
+            'Sent/IMG-20260403-WA0002.jpg',
+            'Sent/IMG-20260403-WA0003.jpg',
+            'Sent/IMG-20260403-WA0004.jpg',
+            'Sent/IMG-20260403-WA0006.jpg',
+            'Sent/IMG-20260403-WA0007.jpg',
+            'Sent/IMG-20260403-WA0008.jpg',
+            'Sent/IMG-20260403-WA0009.jpg',
+            'Sent/IMG-20260403-WA0010.jpg',
+            'Sent/IMG-20260403-WA0011.jpg',
+            'Sent/IMG-20260403-WA0012.jpg',
+            'Sent/IMG-20260403-WA0013.jpg',
+            'Sent/IMG-20260403-WA0014.jpg',
+            'Sent/IMG-20260403-WA0015.jpg',
+            'Sent/IMG-20260403-WA0016.jpg',
+            'Sent/IMG-20260403-WA0017.jpg',
+            'Sent/IMG-20260403-WA0018.jpg',
+            'Sent/IMG-20260403-WA0019.jpg',
+            'Sent/IMG-20260403-WA0020.jpg',
+            'Sent/IMG-20260403-WA0021.jpg',
+            'Sent/IMG-20260403-WA0022.jpg',
+            'Sent/IMG-20260403-WA0024.jpg',
+            'Sent/IMG-20260403-WA0025.jpg',
+            'Sent/IMG-20260403-WA0026.jpg',
+            'Sent/IMG-20260403-WA0027.jpg',
+            'Sent/IMG-20260403-WA0028.jpg',
+            'Sent/IMG-20260403-WA0029.jpg',
+            'Sent/IMG-20260403-WA0030.jpg',
+            'Sent/IMG-20260403-WA0031.jpg',
+            'Sent/IMG-20260403-WA0032.jpg',
+            'Sent/IMG-20260403-WA0033.jpg',
+            'Sent/IMG-20260403-WA0034.jpg',
+            'Sent/IMG-20260403-WA0035.jpg',
+            'Sent/IMG-20260403-WA0036.jpg',
+            'Sent/IMG-20260403-WA0037.jpg',
+            'Sent/IMG-20260403-WA0038.jpg',
+            'Sent/IMG-20260403-WA0039.jpg',
+            'Sent/IMG-20260403-WA0040.jpg',
+            'Sent/IMG-20260403-WA0041.jpg',
+            'Sent/IMG-20260403-WA0042.jpg',
+            'Sent/IMG-20260403-WA0043.jpg',
+            'Sent/IMG-20260403-WA0044.jpg',
+            'Sent/IMG-20260403-WA0045.jpg',
+            'Sent/IMG-20260403-WA0046.jpg',
+            'Sent/IMG-20260403-WA0047.jpg',
+            'Sent/IMG-20260403-WA0048.jpg',
+            'Sent/IMG-20260403-WA0049.jpg',
+            'Sent/IMG-20260403-WA0050.jpg',
+            'Sent/IMG-20260403-WA0051.jpg',
+            'Sent/IMG-20260403-WA0052.jpg',
+            'Sent/IMG-20260403-WA0053.jpg',
+            'Sent/IMG-20260403-WA0054.jpg',
+            'Sent/IMG-20260403-WA0055.jpg',
+            'Sent/IMG-20260403-WA0056.jpg',
+            'Sent/IMG-20260403-WA0057.jpg',
+            'Sent/IMG-20260403-WA0058.jpg',
+            'Sent/IMG-20260403-WA0059.jpg',
+            'Sent/IMG-20260403-WA0060.jpg',
+            'Sent/IMG-20260403-WA0061.jpg',
+            'Sent/IMG-20260403-WA0062.jpg',
+            'Sent/IMG-20260403-WA0063.jpg',
+            'Sent/IMG-20260403-WA0064.jpg',
+            'Sent/IMG-20260403-WA0065.jpg',
+            'Sent/IMG-20260403-WA0066.jpg',
+            'Sent/IMG-20260403-WA0067.jpg',
+            'Sent/IMG-20260403-WA0068.jpg',
+            'Sent/IMG-20260403-WA0069.jpg',
+            'Sent/IMG-20260403-WA0070.jpg',
+            'Sent/IMG-20260403-WA0071.jpg',
+            'Sent/IMG-20260403-WA0072.jpg',
+            'Sent/IMG-20260403-WA0073.jpg',
+            'Sent/IMG-20260403-WA0074.jpg',
+            'Sent/IMG-20260403-WA0077.jpg',
+            'Sent/IMG-20260403-WA0078.jpg',
+            'Sent/IMG-20260403-WA0079.jpg',
+            'Sent/IMG-20260403-WA0080.jpg',
+            'Sent/IMG-20260403-WA0081.jpg',
+            'Sent/IMG-20260403-WA0082.jpg',
+            'Sent/IMG-20260403-WA0083.jpg',
+            'Sent/IMG-20260403-WA0084.jpg',
+            'Sent/IMG-20260403-WA0085.jpg',
+            'Sent/IMG-20260403-WA0086.jpg',
+            'Sent/IMG-20260403-WA0087.jpg',
+            'Sent/IMG-20260403-WA0088.jpg',
+            'Sent/IMG-20260403-WA0089.jpg',
+            'Sent/IMG-20260403-WA0090.jpg',
+            'Sent/IMG-20260403-WA0091.jpg',
+            'Sent/IMG-20260403-WA0092.jpg',
+            'Sent/IMG-20260403-WA0093.jpg',
+            'Sent/IMG-20260403-WA0094.jpg',
+            'Sent/IMG-20260403-WA0095.jpg',
+            'Sent/IMG-20260403-WA0096.jpg',
+            'Sent/IMG-20260403-WA0097.jpg',
+            'Sent/IMG-20260403-WA0098.jpg',
+            'Sent/IMG-20260403-WA0099.jpg',
+            'Sent/IMG-20260403-WA0100.jpg',
+            'Sent/IMG-20260403-WA0101.jpg',
+            'Sent/IMG-20260403-WA0102.jpg',
+            'Sent/IMG-20260403-WA0103.jpg',
+            'Sent/IMG-20260403-WA0104.jpg',
+            'Sent/IMG-20260403-WA0105.jpg',
+            'Sent/IMG-20260403-WA0106.jpg',
+            'Sent/IMG-20260403-WA0107.jpg',
+            'Sent/IMG-20260403-WA0108.jpg',
+            'Sent/IMG-20260403-WA0109.jpg',
+            'Sent/IMG-20260403-WA0110.jpg',
+            'Sent/IMG-20260403-WA0111.jpg',
+            'Sent/IMG-20260403-WA0112.jpg',
+            'Sent/IMG-20260403-WA0113.jpg',
+            'Sent/IMG-20260403-WA0114.jpg',
+            'Sent/IMG-20260403-WA0115.jpg',
+            'Sent/IMG-20260403-WA0116.jpg',
+            'Sent/IMG-20260403-WA0117.jpg',
+            'Sent/IMG-20260403-WA0118.jpg',
+            'Sent/IMG-20260403-WA0119.jpg',
+            'Sent/IMG-20260403-WA0120.jpg',
+            'Sent/IMG-20260403-WA0121.jpg',
+            'Sent/IMG-20260403-WA0122.jpg',
+            'Sent/IMG-20260403-WA0123.jpg',
+            'Sent/IMG-20260403-WA0124.jpg',
+            'Sent/IMG-20260403-WA0125.jpg',
+            'Sent/IMG-20260403-WA0126.jpg',
+            'Sent/IMG-20260403-WA0127.jpg',
+            'Sent/IMG-20260403-WA0128.jpg',
+            'Sent/IMG-20260403-WA0129.jpg',
+            'Sent/IMG-20260403-WA0130.jpg',
+            'Sent/IMG-20260403-WA0131.jpg',
+            'Sent/IMG-20260403-WA0132.jpg',
+            'Sent/IMG-20260403-WA0133.jpg',
+            'Sent/IMG-20260403-WA0134.jpg',
+            'Sent/IMG-20260403-WA0135.jpg',
+            'Sent/IMG-20260403-WA0136.jpg',
+            'Sent/IMG-20260403-WA0137.jpg',
+            'Sent/IMG-20260403-WA0138.jpg',
+            'Sent/IMG-20260403-WA0139.jpg',
+            'Sent/IMG-20260403-WA0140.jpg',
+            'Sent/IMG-20260403-WA0141.jpg',
+            'Sent/IMG-20260403-WA0142.jpg',
+            'Sent/IMG-20260403-WA0143.jpg',
+            'Sent/IMG-20260403-WA0144.jpg',
+            'Sent/IMG-20260403-WA0145.jpg',
+            'Sent/IMG-20260403-WA0146.jpg',
+            'Sent/IMG-20260403-WA0147.jpg',
+            'Sent/IMG-20260403-WA0148.jpg',
+            'Sent/IMG-20260403-WA0149.jpg',
+            'Sent/IMG-20260403-WA0150.jpg',
+            'Sent/IMG-20260403-WA0151.jpg',
+            'Sent/IMG-20260403-WA0152.jpg',
+            'Sent/IMG-20260403-WA0153.jpg',
+            'Sent/IMG-20260403-WA0154.jpg',
+            'Sent/IMG-20260403-WA0155.jpg',
+            'Sent/IMG-20260403-WA0156.jpg',
+            'Sent/IMG-20260403-WA0157.jpg',
+            'Sent/IMG-20260403-WA0158.jpg',
+            'Sent/IMG-20260403-WA0159.jpg',
+            'Sent/IMG-20260403-WA0160.jpg',
+            'Sent/IMG-20260403-WA0161.jpg',
+            'Sent/IMG-20260403-WA0162.jpg',
+            'Sent/IMG-20260403-WA0163.jpg',
+            'Sent/IMG-20260403-WA0164.jpg',
+            'Sent/IMG-20260403-WA0165.jpg',
+            'Sent/IMG-20260403-WA0166.jpg',
+            'Sent/IMG-20260403-WA0167.jpg',
+            'Sent/IMG-20260403-WA0168.jpg',
+            'Sent/IMG-20260403-WA0169.jpg',
+            'Sent/IMG-20260403-WA0170.jpg',
+            'Sent/IMG-20260403-WA0171.jpg',
+            'Sent/IMG-20260403-WA0172.jpg',
+            'Sent/IMG-20260403-WA0173.jpg',
+            'Sent/IMG-20260403-WA0174.jpg',
+            'Sent/IMG-20260403-WA0175.jpg',
+            'Sent/IMG-20260403-WA0176.jpg',
+            'Sent/IMG-20260403-WA0177.jpg',
+            'Sent/IMG-20260403-WA0178.jpg',
+            'Sent/IMG-20260403-WA0179.jpg',
+            'Sent/IMG-20260403-WA0180.jpg',
+            'Sent/IMG-20260403-WA0181.jpg',
+            'Sent/IMG-20260403-WA0182.jpg',
+            'Sent/IMG-20260403-WA0183.jpg',
+            'Sent/IMG-20260403-WA0184.jpg',
+            'Sent/IMG-20260403-WA0185.jpg',
+            'Sent/IMG-20260403-WA0186.jpg',
+            'Sent/IMG-20260403-WA0187.jpg',
+            'Sent/IMG-20260403-WA0188.jpg',
+            'Sent/IMG-20260403-WA0189.jpg',
+            'Sent/IMG-20260403-WA0192.jpg',
+            'Sent/IMG-20260403-WA0193.jpg',
+            'Sent/IMG-20260403-WA0194.jpg',
+            'Sent/IMG-20260403-WA0195.jpg',
+            'Sent/IMG-20260403-WA0196.jpg',
+            'Sent/IMG-20260403-WA0197.jpg',
+            'Sent/IMG-20260403-WA0198.jpg',
+            'Sent/IMG-20260403-WA0199.jpg',
+            'Sent/IMG-20260403-WA0200.jpg',
+            'Sent/IMG-20260403-WA0201.jpg',
+            'Sent/IMG-20260403-WA0202.jpg',
+            'Sent/IMG-20260403-WA0203.jpg',
+            'Sent/IMG-20260403-WA0204.jpg',
+            'Sent/IMG-20260403-WA0205.jpg',
+            'Sent/IMG-20260403-WA0206.jpg',
+            'Sent/IMG-20260403-WA0207.jpg',
+            'Sent/IMG-20260403-WA0208.jpg',
+            'Sent/IMG-20260403-WA0209.jpg',
+            'Sent/IMG-20260403-WA0210.jpg',
+            'Sent/IMG-20260403-WA0211.jpg',
+            'Sent/IMG-20260403-WA0212.jpg',
+            'Sent/IMG-20260403-WA0213.jpg',
+            'Sent/IMG-20260403-WA0214.jpg',
+            'Sent/IMG-20260403-WA0215.jpg',
+            'Sent/IMG-20260403-WA0216.jpg',
+            'Sent/IMG-20260403-WA0217.jpg',
+            'Sent/IMG-20260403-WA0218.jpg',
+            'Sent/IMG-20260403-WA0219.jpg',
+            'Sent/IMG-20260403-WA0220.jpg',
+            'Sent/IMG-20260403-WA0221.jpg',
+            'Sent/IMG-20260403-WA0222.jpg',
+            'Sent/IMG-20260403-WA0223.jpg',
+            'Sent/IMG-20260403-WA0224.jpg',
+            'Sent/IMG-20260403-WA0225.jpg',
+            'Sent/IMG-20260403-WA0226.jpg',
+            'Sent/IMG-20260403-WA0227.jpg',
+            'Sent/IMG-20260403-WA0228.jpg',
+            'Sent/IMG-20260403-WA0229.jpg',
+            'Sent/IMG-20260403-WA0230.jpg',
+            'Sent/IMG-20260403-WA0231.jpg',
+            'Sent/IMG-20260403-WA0232.jpg',
+            'Sent/IMG-20260403-WA0233.jpg',
+            'Sent/IMG-20260403-WA0234.jpg',
+            'Sent/IMG-20260403-WA0235.jpg',
+            'Sent/IMG-20260403-WA0236.jpg',
+            'Sent/IMG-20260403-WA0237.jpg',
+            'Sent/IMG-20260403-WA0238.jpg',
+            'Sent/IMG-20260403-WA0239.jpg',
+            'Sent/IMG-20260403-WA0240.jpg',
+            'Sent/IMG-20260403-WA0241.jpg',
+            'Sent/IMG-20260403-WA0242.jpg',
+            'Sent/IMG-20260403-WA0243.jpg',
+            'Sent/IMG-20260403-WA0244.jpg',
+            'Sent/IMG-20260403-WA0245.jpg',
+            'Sent/IMG-20260403-WA0246.jpg'
+        ];
+
+        const BATCH   = 30;
+        let shown     = 0;
+        let lbIndex   = 0;
+
+        const masonry = document.getElementById('photosMasonry');
+        const loadBtn = document.getElementById('loadMoreBtn');
+
+        function renderBatch() {
+            const next = Math.min(shown + BATCH, ALL_PHOTOS.length);
+            for (let i = shown; i < next; i++) {
+                const item = document.createElement('div');
+                item.className = 'photo-item';
+                item.dataset.index = i;
+                item.innerHTML = `
+                    <img src="${ALL_PHOTOS[i]}" alt="Photo ${i + 1}">
+                    <div class="photo-item-overlay">
+                        <div class="expand-icon">
+                            <svg viewBox="0 0 24 24" stroke-width="1.5">
+                                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                            </svg>
+                        </div>
+                    </div>`;
+                item.addEventListener('click', () => openLightbox(parseInt(item.dataset.index)));
+                item.addEventListener('mouseenter', () => ring.classList.add('hovered'));
+                item.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
+                masonry.appendChild(item);
+            }
+            shown = next;
+            if (shown >= ALL_PHOTOS.length) loadBtn.classList.add('hidden');
+        }
+
+        renderBatch();
+        loadBtn.addEventListener('click', renderBatch);
+        loadBtn.addEventListener('mouseenter', () => ring.classList.add('hovered'));
+        loadBtn.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
+
+        /* ===== LIGHTBOX ===== */
+        const lb        = document.getElementById('lightbox');
+        const lbImg     = document.getElementById('lbImg');
+        const lbCounter = document.getElementById('lbCounter');
+
+        function openLightbox(index) {
+            lbIndex = index;
+            lbImg.src = ALL_PHOTOS[lbIndex];
+            lbCounter.textContent = (lbIndex + 1) + ' / ' + ALL_PHOTOS.length;
+            lb.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            lb.classList.remove('open');
+            document.body.style.overflow = '';
+            setTimeout(() => { lbImg.src = ''; }, 400);
+        }
+
+        function lbGo(dir) {
+            lbIndex = (lbIndex + dir + ALL_PHOTOS.length) % ALL_PHOTOS.length;
+            lbImg.src = ALL_PHOTOS[lbIndex];
+            lbCounter.textContent = (lbIndex + 1) + ' / ' + ALL_PHOTOS.length;
+        }
+
+        document.getElementById('lbClose').addEventListener('click', closeLightbox);
+        document.getElementById('lbPrev').addEventListener('click', () => lbGo(-1));
+        document.getElementById('lbNext').addEventListener('click', () => lbGo(1));
+        lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
+        document.addEventListener('keydown', e => {
+            if (!lb.classList.contains('open')) return;
+            if (e.key === 'Escape')      closeLightbox();
+            if (e.key === 'ArrowLeft')   lbGo(-1);
+            if (e.key === 'ArrowRight')  lbGo(1);
+        });
+
+        [document.getElementById('lbClose'),
+         document.getElementById('lbPrev'),
+         document.getElementById('lbNext')].forEach(el => {
+            el.addEventListener('mouseenter', () => ring.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
+        });
+
+        (function grain() {
+            const w = canvas.width, h = canvas.height;
+            const img = ctx.createImageData(w, h);
+            const d   = img.data;
+            for (let i = 0; i < d.length; i += 4) {
+                const v = Math.random() * 255 | 0;
+                d[i] = d[i+1] = d[i+2] = v;
+                d[i+3] = 255;
+            }
+            ctx.putImageData(img, 0, 0);
+            requestAnimationFrame(grain);
+        })();
+    </script>
+</body>
+</html>
