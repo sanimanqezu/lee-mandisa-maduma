@@ -1,0 +1,16 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    name: Smoke check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify entry page exists and is well-formed
+        run: |
+          test -s index.html
+          grep -qi '<html' index.html
+          grep -qi '</html>' index.html
+          echo "index.html present and structurally sane"
